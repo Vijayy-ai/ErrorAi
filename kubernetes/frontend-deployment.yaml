@@ -1,0 +1,35 @@
+# kubernetes/frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: error-ai-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: error-ai-frontend
+  template:
+    metadata:
+      labels:
+        app: error-ai-frontend
+    spec:
+      containers:
+      - name: error-ai-frontend
+        image: your-registry/error-ai-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://error-ai-backend-service"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: error-ai-frontend-service
+spec:
+  selector:
+    app: error-ai-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000

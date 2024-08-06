@@ -1,0 +1,40 @@
+# kubernetes/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: error-ai-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: error-ai-backend
+  template:
+    metadata:
+      labels:
+        app: error-ai-backend
+    spec:
+      containers:
+      - name: error-ai-backend
+        image: your-registry/error-ai-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "error_ai.settings.production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: error-ai-secrets
+              key: database-url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: error-ai-backend-service
+spec:
+  selector:
+    app: error-ai-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

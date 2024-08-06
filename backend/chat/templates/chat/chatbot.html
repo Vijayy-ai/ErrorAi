@@ -1,0 +1,16 @@
+<!-- backend/chat/templates/chat/chatbot.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+</head>
+<body>
+    <h1>Chat History</h1>
+    <ul>
+        {% for chat in chat_history %}
+            <li>{{ chat.timestamp }} - {{ chat.message }}: {{ chat.response }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
