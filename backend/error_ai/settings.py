@@ -34,7 +34,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-39q*+)wa6sns9k!6st3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS =['*']
+ALLOWED_HOSTS =os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # ['http://127.0.0.1:8000/', 'http://localhost:8000/']
 
 # os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -98,7 +98,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'error_ai.wsgi.application'
+# WSGI_APPLICATION = 'error_ai.wsgi.application'
 ASGI_APPLICATION = 'error_ai.asgi.application'
 
 # # Database settings

@@ -13,7 +13,7 @@
 #     re_path(r'ws/chat/$', consumers.ChatConsumer.as_asgi()),
 # ]
 
-#backend/chat/routing.py
+# backend/chat/routing.py
 from django.urls import re_path
 from . import consumers
 
