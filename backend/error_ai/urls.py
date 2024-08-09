@@ -66,8 +66,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('', include('django_prometheus.urls')),
-    path('', home),
     path('accounts/', include('django.contrib.auth.urls')),  # Add this line
-
+    path('', home),
 ]
 
