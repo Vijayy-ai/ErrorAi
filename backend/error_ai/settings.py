@@ -1,4 +1,3 @@
-
 # backend/error_ai/settings.py
 
 import os
@@ -10,8 +9,6 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from urllib.parse import quote_plus
-# import django
-# django.setup()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,9 +22,8 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-39q*+)wa6sns9k!6st3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*'] 
-# os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-# ['http://127.0.0.1:8000/', 'http://localhost:8000/']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 
 
 INSTALLED_APPS = [
@@ -37,60 +33,43 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'rest_framework',
     'corsheaders',
-    'channels',
     'api',
-    'chat',
     'ml',
-    'django_nextjs.apps.DjangoNextJSConfig',
-    'django_prometheus',
-    'rest_framework_simplejwt',
-    'django_celery_results',
-   
-    
-    
+    'common',
 ]
 
 # Middleware configuration
 MIDDLEWARE = [
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
-    # 'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.gzip.GZipMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
-# Configure CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_ALLOW_CREDENTIALS = True
+
+# Rest Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'EXCEPTION_HANDLER': 'common.error_handler.custom_exception_handler'
+}
+
 ROOT_URLCONF = 'error_ai.urls'
 
-
-# # Add 'DIRS' in the TEMPLATES setting
-# TEMPLATES = [
-#     {
-#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-#         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-#         'APP_DIRS': True,
-#         'OPTIONS': {
-#             'context_processors': [
-#                 'django.template.context_processors.debug',
-#                 'django.template.context_processors.request',
-#                 'django.contrib.auth.context_processors.auth',
-#                 'django.contrib.messages.context_processors.messages',
-#             ],
-#         },
-#     },
-# ]
 
 TEMPLATES = [
     {
@@ -161,14 +140,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, configure properly for production
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
-
 # Redis configuration
-REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
 
 CACHES = {
     'default': {
@@ -181,17 +154,9 @@ CACHES = {
 }
 
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [REDIS_URL],
-        },
-    },
-}
-CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+    },
 }
 
 CELERY_BROKER_URL = REDIS_URL
@@ -218,118 +183,32 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# # Logging configuration
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'file': {
-#             'level': 'DEBUG',
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             'filename': os.path.join(BASE_DIR, 'logs', 'error_ai.log'),
-#             'maxBytes': 1024 * 1024 * 5,  # 5 MB
-#             'backupCount': 5,
-#             'formatter': 'verbose',
-#         },
-#         'console': {
-#             'level': 'INFO',
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'verbose',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['file', 'console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#         'error_ai': {
-#             'handlers': ['file', 'console'],
-#             'level': 'DEBUG',
-#             'propagate': True,
-#         },
-#     },
-# }
 
-
-
-# Logging configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'error_ai.log',
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 5,
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
-
-
-
-
-# # Ensure the logs directory exists
-# LOG_DIR = os.path.join(BASE_DIR, 'logs')
-# os.makedirs(LOG_DIR, exist_ok=True)
-
-logging.config.dictConfig(LOGGING)
 
 # REST Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
     ],
-
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-     ],
-    
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'api.throttling.ChatbotAnonThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
-        'user': '1000/day'
-    } 
+    },
+    'EXCEPTION_HANDLER': 'common.error_handler.custom_exception_handler'
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERERS_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),   
+# Add WebSocket allowed origins
+CHANNEL_LAYERS_CONFIG = {
+    'allowed_origins': ['localhost:3000'],
+    'allowed_hosts': ['*'],
 }
 
-
-# JWT settings
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-}
-
-# Celery settings
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'default'
+# Add this to handle async views
+DJANGO_ALLOW_ASYNC_UNSAFE = True
 
 
 
@@ -339,6 +218,4 @@ CELERY_CACHE_BACKEND = 'default'
 
 
 
-
-LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
 

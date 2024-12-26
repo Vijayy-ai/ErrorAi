@@ -1,7 +1,6 @@
-#backend/ml/urls.py
 from django.urls import path
-from .views import ProcessMLView
+from . import views
 
 urlpatterns = [
-    path('process/', ProcessMLView.as_view(), name='process_ml'),
-]
+    path('process/', views.ProcessMessageView.as_view(), name='process_message'),
+] 

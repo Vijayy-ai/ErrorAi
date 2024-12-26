@@ -1,0 +1,46 @@
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore virtual environment directories
+venv/
+env/
+
+# Ignore IDE/editor specific files
+.vscode/
+.idea/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore compiled code
+*.so
+*.dll
+*.dylib
+
+# Ignore environment variable files
+.env
+
+# Ignore backup files
+*.bak
+*.swp
+*.swo
+*.tmp
+
+# Ignore coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
+# Ignore build directories
+build/
+dist/
+*.egg-info/
+
+# Ignore error-ai specific files
+error-ai/backend/common/error_handler.py

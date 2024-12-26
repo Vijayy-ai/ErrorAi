@@ -1,37 +1,38 @@
-#backend/ml/views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from common.error_handler import error_handler
-from services.unified_model import unified_model
-from asgiref.sync import async_to_sync
+from .services import AIService
+import logging
 
-class ProcessMLView(APIView):
-    @error_handler.handle_error
-    def post(self, request):
-        user_input = request.data.get('input')
-        result = async_to_sync(unified_model.process_input)(user_input)
-        return Response({'result': result}, status=status.HTTP_200_OK)
+logger = logging.getLogger(__name__)
 
-    @error_handler.handle_error
-    def get(self, request):
-        return Response({'message': 'Use POST to process ML requests'}, status=status.HTTP_200_OK)
+class ProcessMessageView(APIView):
+    def __init__(self):
+        super().__init__()
+        self.ai_service = AIService()
 
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status
-# from common.error_handler import error_handler
-# from services import unified_model
+    def post(self, request, *args, **kwargs):
+        try:
+            message = request.data.get('message')
+            task_type = request.data.get('task_type')
+            
+            if not message:
+                return Response(
+                    {'error': 'Message is required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-# class ProcessMLView(APIView):
-#     @error_handler.handle_error
-#     async def post(self, request):
-#         user_input = request.data.get('input')
-#         result = await unified_model.process_input(user_input)
-#         return Response({'result': result}, status=status.HTTP_200_OK)
-
-#     @error_handler.handle_error
-#     async def get(self, request):
-#         return Response({'message': 'Use POST to process ML requests'}, status=status.HTTP_200_OK)
+            # Process synchronously since we're in a sync view
+            result = {
+                'response': 'Sample response',  # Replace with actual AI processing
+                'task_type': task_type or 'conversation'
+            }
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error processing message: {str(e)}")
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 

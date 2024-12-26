@@ -1,57 +1,27 @@
-#backend/common/error_handler.py
-import functools
-import logging
-from asgiref.sync import iscoroutinefunction, async_to_sync
+from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 
-logger = logging.getLogger(__name__)
+def error_handler(error):
+    """
+    Simple error handler for non-DRF contexts
+    """
+    error_message = str(error)
+    return {
+        'error': error_message,
+        'status': status.HTTP_400_BAD_REQUEST
+    }
 
-class ErrorHandler:
-    @staticmethod
-    def handle_error(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                if iscoroutinefunction(func):
-                    return async_to_sync(func)(*args, **kwargs)
-                else:
-                    return func(*args, **kwargs)
-            except Exception as e:
-                logger.error(f"Error in {func.__name__}: {str(e)}")
-                return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return wrapper
+def custom_exception_handler(exc, context):
+    """
+    Custom exception handler for DRF views
+    """
+    response = exception_handler(exc, context)
 
-error_handler = ErrorHandler()
+    if response is None:
+        response = Response({
+            'error': str(exc),
+            'detail': 'An unexpected error occurred'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
-
-
-
-
-
-
-
-
-
-# import logging
-# from functools import wraps
-# from rest_framework.response import Response
-# from rest_framework import status
-
-# logger = logging.getLogger(__name__)
-
-# class ErrorHandler:
-#     @staticmethod
-#     def handle_error(func):
-#         @wraps(func)
-#         async def wrapper(*args, **kwargs):
-#             try:
-#                 return await func(*args, **kwargs)
-#             except Exception as e:
-#                 logger.error(f"Error in {func.__name__}: {str(e)}")
-#                 return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#         return wrapper
-
-# error_handler = ErrorHandler()
+    return response 

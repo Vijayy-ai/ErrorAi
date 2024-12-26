@@ -10,41 +10,29 @@
 
 #backend/error_ai/asgi.py
 import os
+import django
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from django.urls import path
-from api.consumers import ChatConsumer
-from chat.views import ChatbotView
+from channels.security.websocket import AllowedHostsOriginValidator
+from django.apps import apps
+
+# Set up Django ASGI application early to ensure apps are loaded
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'error_ai.settings')
+django.setup()  # This is the key addition
+
+# Import after django setup
+from api.routing import websocket_urlpatterns
+from api.middleware import WebSocketRateLimitMiddleware
+
+# Initialize Django ASGI application early
+django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
-        URLRouter([
-            # path('wsy', ChatbotView.as_view(), name='chatbot'),
-            path('ws/chat/', ChatConsumer.as_asgi()),
-        ])
+    "http": django_asgi_app,
+    "websocket": AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(websocket_urlpatterns)
+        )
     ),
 })
-
-
-
-# #backend/error_ai/asgi.py
-# import os
-# from django.core.asgi import get_asgi_application
-# from channels.routing import ProtocolTypeRouter, URLRouter
-# from channels.auth import AuthMiddlewareStack
-# import api.routing
-
-
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'error_ai.settings')
-
-# application = ProtocolTypeRouter({
-#     "http": get_asgi_application(),
-#     "websocket": AuthMiddlewareStack(
-#         URLRouter(
-#             api.routing.websocket_urlpatterns
-#         )
-#     ),
-# })

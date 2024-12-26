@@ -1,7 +1,7 @@
 #backend/api/serializers.py
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import ChatHistory
+from .models import ChatMessage
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-class ChatHistorySerializer(serializers.ModelSerializer):
+class ChatMessageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ChatHistory
-        fields = ['id', 'message', 'response', 'timestamp']
+        model = ChatMessage
+        fields = ['id', 'message', 'response', 'task_type', 'created_at']

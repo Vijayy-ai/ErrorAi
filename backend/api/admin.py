@@ -1,30 +1,9 @@
-# 
-# from django.contrib import admin
-# from django.contrib.auth.admin import UserAdmin
-# from .models import MongoUser, ChatHistory
-
-# class MongoUserAdmin(UserAdmin):
-#     model = MongoUser
-#     list_display = ('username', 'email', 'is_staff', 'is_active',)
-#     list_filter = ('is_staff', 'is_active',)
-#     fieldsets = (
-#         (None, {'fields': ('username', 'email', 'password')}),
-#         ('Permissions', {'fields': ('is_staff', 'is_active', 'groups', 'user_permissions')}),
-#     )
-#     add_fieldsets = (
-#         (None, {
-#             'classes': ('wide',),
-#             'fields': ('username', 'email', 'password1', 'password2', 'is_staff', 'is_active')}
-#         ),
-#     )
-#     search_fields = ('username', 'email',)
-#     ordering = ('username',)
-
-# admin.site.register(MongoUser, MongoUserAdmin)
-# admin.site.register(ChatHistory)
-
-# File: backend/api/admin.py
 from django.contrib import admin
-from .models import ChatHistory
+from .models import ChatMessage
 
-admin.site.register(ChatHistory)
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ('message', 'task_type', 'created_at')
+    list_filter = ('task_type', 'created_at')
+    search_fields = ('message', 'response')
+    ordering = ('-created_at',)
