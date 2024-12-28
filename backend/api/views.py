@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ChatbotView(APIView):
-    async def post(self, request):
+    def post(self, request, *args, **kwargs):
         try:
             message = request.data.get('message')
             task_type = request.data.get('task_type')
@@ -21,18 +21,16 @@ class ChatbotView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            model_service = UnifiedModelService()
-            result = await model_service.process_input(message, task_type)
-            
-            # Use sync_to_async for database operations
-            await sync_to_async(ChatMessage.objects.create)(
+            # Create chat message
+            chat_message = ChatMessage.objects.create(
                 message=message,
-                response=result['response'],
-                task_type=result['task_type']
+                response="Processing...",  # Initial response
+                task_type=task_type or 'conversation'
             )
             
-            # Return a proper Response object
-            return Response(result, status=status.HTTP_200_OK)
+            # Return response
+            serializer = ChatMessageSerializer(chat_message)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             logger.error(f"Error in ChatbotView: {str(e)}")

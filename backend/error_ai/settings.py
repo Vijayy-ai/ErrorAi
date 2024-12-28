@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'api',
     'ml',
-    'common',
 ]
 
 # Middleware configuration
@@ -104,6 +103,22 @@ DATABASES = {
     }
 }
 
+# Add database logging for debugging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

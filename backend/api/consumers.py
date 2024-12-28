@@ -1,9 +1,9 @@
 # backend/api/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from ml.unified_model import UnifiedModelService
+from channels.db import database_sync_to_async
 from .models import ChatMessage
-from asgiref.sync import sync_to_async
+from ml.unified_model import UnifiedModelService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,9 +17,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.info(f"WebSocket disconnected with code: {close_code}")
 
-    @sync_to_async
+    @database_sync_to_async
     def save_chat_message(self, message: str, response: str, task_type: str):
-        ChatMessage.objects.create(
+        return ChatMessage.objects.create(
             message=message,
             response=response,
             task_type=task_type
@@ -29,7 +29,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
             message = data.get('message')
-            task_type = data.get('task_type')
+            task_type = data.get('task_type', 'conversation')
 
             if not message:
                 await self.send(text_data=json.dumps({
@@ -37,12 +37,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }))
                 return
 
-            # Process message
+            # Process message using UnifiedModelService
             result = await self.model_service.process_input(message, task_type)
             
             if result.get('success', False):
-                # Save to database
-                await self.save_chat_message(
+                # Save successful response to database
+                chat_message = await self.save_chat_message(
                     message=message,
                     response=result['response'],
                     task_type=result['task_type']

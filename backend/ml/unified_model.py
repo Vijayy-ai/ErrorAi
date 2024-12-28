@@ -7,26 +7,31 @@ import re
 class UnifiedModelService:
     def __init__(self):
         self.api_key = os.getenv('HUGGINGFACE_API_KEY')
+        if not self.api_key:
+            raise ValueError("HUGGINGFACE_API_KEY environment variable is not set")
         self.api_base = "https://api-inference.huggingface.co/models"
-        self.models = {
-            "code_generation": "Salesforce/codegen-350M-mono",
-            "code_explanation": "microsoft/codebert-base",
-            "error_fixing": "microsoft/codebert-base",
-            "conversation": "facebook/blenderbot-400M-distill"
-        }
+        self.model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
     async def process_input(self, message: str, task_type: str = None) -> Dict[str, Any]:
-        if not task_type:
-            task_type = self._detect_task_type(message)
-
         try:
-            model = self.models.get(task_type, self.models["conversation"])
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            payload = self._prepare_payload(message, task_type)
+            
+            # Format the prompt based on task type
+            prompt = self._format_prompt(message, task_type)
+            
+            payload = {
+                "inputs": prompt,
+                "parameters": {
+                    "max_length": 2048,
+                    "temperature": 0.7,
+                    "top_p": 0.95,
+                    "return_full_text": False
+                }
+            }
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.api_base}/{model}",
+                    f"{self.api_base}/{self.model}",
                     headers=headers,
                     json=payload
                 ) as response:
@@ -39,10 +44,10 @@ class UnifiedModelService:
                         }
                     
                     result = await response.json()
-                    formatted_response = self._format_response(result, task_type)
+                    formatted_response = self._format_response(result)
                     return {
                         'response': formatted_response,
-                        'task_type': task_type,
+                        'task_type': task_type or self._detect_task_type(message),
                         'success': True
                     }
                     
@@ -56,50 +61,65 @@ class UnifiedModelService:
 
     def _detect_task_type(self, message: str) -> str:
         message = message.lower()
-        if any(word in message for word in ["error", "fix", "debug"]):
+        if any(word in message for word in ["error", "fix", "debug", "solve"]):
             return "error_fixing"
         elif any(word in message for word in ["explain", "what", "how", "why"]):
             return "code_explanation"
-        elif any(word in message for word in ["generate", "create", "write"]):
+        elif any(word in message for word in ["generate", "create", "write", "implement"]):
             return "code_generation"
         return "conversation"
 
-    def _format_response(self, response: list, task_type: str) -> str:
+    def _format_prompt(self, message: str, task_type: str = None) -> str:
+        """Format the prompt based on task type for Mixtral"""
+        if not task_type:
+            task_type = self._detect_task_type(message)
+
+        if task_type == "error_fixing":
+            return f"""<s>[INST] You are an expert programmer. Fix the following error or issue:
+
+{message}
+
+Provide a detailed solution with code examples if necessary. [/INST]</s>"""
+        
+        elif task_type == "code_generation":
+            return f"""<s>[INST] You are an expert programmer. Generate code for the following request:
+
+{message}
+
+Provide well-commented, production-ready code. [/INST]</s>"""
+        
+        elif task_type == "code_explanation":
+            return f"""<s>[INST] You are an expert programmer. Explain the following code or concept:
+
+{message}
+
+Provide a detailed explanation with examples if helpful. [/INST]</s>"""
+        
+        else:
+            return f"""<s>[INST] You are Error.AI, a helpful programming assistant.
+
+{message} [/INST]</s>"""
+
+    def _format_response(self, response: list) -> str:
+        """Format the model's response"""
         if not response:
             return "I couldn't generate a response. Please try again."
             
-        if task_type in ["code_generation", "error_fixing"]:
-            if isinstance(response, list) and response:
-                return self._format_code_response(response[0])
-            return response[0].get('generated_text', '')
+        if isinstance(response, list):
+            text = response[0].get('generated_text', '')
+        else:
+            text = str(response)
+            
+        # Clean up the response
+        text = text.strip()
         
-        return response[0].get('generated_text', 'I apologize, but I couldn\'t process your request properly.')
-    
-    def _format_code_response(self, response: Dict) -> str:
-        """Format code responses with proper indentation and syntax"""
-        if isinstance(response, dict) and 'generated_text' in response:
-            code = response['generated_text']
-            # Clean up the code
-            code = code.strip()
-            # Remove extra blank lines
-            code = re.sub(r'\n\s*\n', '\n\n', code)
-            return f"```python\n{code}\n```"
-        return str(response) 
-
-    def _prepare_payload(self, message: str, task_type: str) -> Dict[str, Any]:
-        """Prepare model-specific payloads"""
-        base_payload = {"inputs": message}
+        # If response contains code, format it properly
+        if '```' in text:
+            return text
         
-        if task_type == "code_generation":
-            base_payload["parameters"] = {
-                "max_length": 500,
-                "temperature": 0.7,
-                "top_p": 0.95
-            }
-        elif task_type == "error_fixing":
-            base_payload["parameters"] = {
-                "max_length": 300,
-                "temperature": 0.3
-            }
-        
-        return base_payload 
+        # Detect if response is code
+        if any(indicator in text for indicator in ['def ', 'class ', 'function', 'var ', 'const ']):
+            lang = 'python' if any(py in text for py in ['def ', 'class ']) else 'javascript'
+            return f"```{lang}\n{text}\n```"
+            
+        return text 

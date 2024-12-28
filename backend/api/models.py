@@ -1,5 +1,3 @@
-
-
 #backend/api/models.py
 from django.db import models
 from django.contrib.auth.models import User
@@ -14,10 +12,12 @@ class ChatMessage(models.Model):
     
     message = models.TextField()
     response = models.TextField()
-    task_type = models.CharField(max_length=20, choices=TASK_TYPES, default='conversation')
+    task_type = models.CharField(max_length=50, choices=TASK_TYPES, default='conversation')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
+        app_label = 'api'
+        db_table = 'api_chatmessage'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['-created_at']),
